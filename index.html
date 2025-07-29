@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ping via API</title>
+<style>
+body { font-family: Arial; text-align: center; margin-top: 50px; }
+input, button { padding: 10px; margin: 10px; width: 250px; }
+.result { margin-top: 20px; font-size: 18px; }
+</style>
+</head>
+<body>
+<h1>Ping une IP</h1>
+<input type="text" id="ip" placeholder="Entrez une IP (ex: 8.8.8.8)">
+<button onclick="pingIp()">Ping</button>
+<div class="result" id="result"></div>
+
+<script>
+async function pingIp() {
+    const ip = document.getElementById('ip').value.trim();
+    const resultDiv = document.getElementById('result');
+
+    if (!ip) return resultDiv.innerHTML = "⚠️ Entrez une IP valide.";
+
+    try {
+        const apiUrl = "https://ping-api-518h.onrender.com" + ip;
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+
+        if (data.alive) {
+            resultDiv.innerHTML = `✅ ${data.host} répond en ${data.time} ms<br>${data.output}`;
+        } else {
+            resultDiv.innerHTML = `❌ ${data.host} ne répond pas.`;
+        }
+    } catch (error) {
+        resultDiv.innerHTML = `❌ Erreur : ${error.message}`;
+    }
+}
+</script>
+</body>
+</html>
