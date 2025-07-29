@@ -94,7 +94,7 @@ canvas {
 </div>
 
 <script>
-const API_BASE = "https://ping-api-518h.onrender.com/"; // ✅ Ton URL Render
+const API_BASE = "https://ping-api-518h.onrender.com";
 
 async function pingIp() {
     const ip = document.getElementById('ip').value.trim();
@@ -105,7 +105,7 @@ async function pingIp() {
     }
     resultDiv.innerHTML = "⏳ Test en cours...";
     try {
-        const res = await fetch(`${API_BASE}/ping/${ip}`); // ✅ Correct
+        const res = await fetch(`${API_BASE}/ping/${ip}`);
         const data = await res.json();
         if (data.alive) {
             resultDiv.innerHTML = `✅ ${data.host} répond en ${data.time} ms<br>${data.output}`;
@@ -133,7 +133,7 @@ async function pingPopular() {
         tbody.appendChild(row);
         
         try {
-            const res = await fetch(`${API_BASE}/ping/${ip}`); // ✅ Correct
+            const res = await fetch(`${API_BASE}/ping/${ip}`);
             const data = await res.json();
             labels.push(ip);
             if (data.alive) {
