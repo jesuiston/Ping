@@ -3,31 +3,111 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ping via API</title>
+<title>Ping Test - API Render</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-body { font-family: Arial; text-align: center; margin-top: 50px; }
-input, button { padding: 10px; margin: 10px; width: 250px; }
-.result { margin-top: 20px; font-size: 18px; }
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+    background: #f4f4f4;
+}
+h1 {
+    color: #333;
+}
+.container {
+    max-width: 700px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+input, button {
+    padding: 10px;
+    margin: 10px;
+    width: calc(100% - 40px);
+    max-width: 400px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+button:hover {
+    background: #0056b3;
+}
+.table-container {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+th {
+    background: #007bff;
+    color: white;
+}
+.status-ok {
+    color: green;
+    font-weight: bold;
+}
+.status-fail {
+    color: red;
+    font-weight: bold;
+}
+canvas {
+    max-width: 100%;
+}
 </style>
 </head>
 <body>
-<h1>Ping une IP</h1>
-<input type="text" id="ip" placeholder="Entrez une IP (ex: 8.8.8.8)">
-<button onclick="pingIp()">Ping</button>
-<div class="result" id="result"></div>
+<div class="container">
+    <h1>Ping Test</h1>
+    <input type="text" id="ip" placeholder="Entrez une IP (ex: 8.8.8.8)">
+    <button onclick="pingIp()">Tester IP</button>
+    <button onclick="pingPopular()">Tester IP populaires</button>
+    <div id="result"></div>
+    <div class="table-container">
+        <table id="pingTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th>IP</th>
+                    <th>Status</th>
+                    <th>Temps (ms)</th>
+                </tr>
+            </thead>
+            <tbody id="pingResults"></tbody>
+        </table>
+    </div>
+    <canvas id="pingChart" style="display:none;"></canvas>
+</div>
 
 <script>
+const API_BASE = "https://ping-v2n6.onrender.com"; // ✅ Remplace par ton URL Render
+let chart;
+
 async function pingIp() {
     const ip = document.getElementById('ip').value.trim();
     const resultDiv = document.getElementById('result');
-
-    if (!ip) return resultDiv.innerHTML = "⚠️ Entrez une IP valide.";
-
+    if (!ip) {
+        resultDiv.innerHTML = "⚠️ Entrez une IP valide.";
+        return;
+    }
+    resultDiv.innerHTML = "⏳ Test en cours...";
     try {
-        const apiUrl = "https://ping-api-518h.onrender.com" + ip;
-        const res = await fetch(apiUrl);
+        const res = await fetch(`${API_BASE}/ping/${ip}`);
         const data = await res.json();
-
         if (data.alive) {
             resultDiv.innerHTML = `✅ ${data.host} répond en ${data.time} ms<br>${data.output}`;
         } else {
@@ -36,6 +116,73 @@ async function pingIp() {
     } catch (error) {
         resultDiv.innerHTML = `❌ Erreur : ${error.message}`;
     }
+}
+
+async function pingPopular() {
+    const ips = ["8.8.8.8", "1.1.1.1", "208.67.222.222", "9.9.9.9"];
+    const table = document.getElementById('pingTable');
+    const tbody = document.getElementById('pingResults');
+    tbody.innerHTML = "";
+    table.style.display = "table";
+    
+    const labels = [];
+    const values = [];
+    
+    for (const ip of ips) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${ip}</td><td>⏳</td><td>-</td>`;
+        tbody.appendChild(row);
+        
+        try {
+            const res = await fetch(`${API_BASE}/ping/${ip}`);
+            const data = await res.json();
+            labels.push(ip);
+            if (data.alive) {
+                row.cells[1].innerHTML = `<span class="status-ok">✅ OK</span>`;
+                row.cells[2].innerHTML = `${data.time} ms`;
+                values.push(parseFloat(data.time));
+            } else {
+                row.cells[1].innerHTML = `<span class="status-fail">❌ Fail</span>`;
+                row.cells[2].innerHTML = "-";
+                values.push(0);
+            }
+        } catch (err) {
+            row.cells[1].innerHTML = `<span class="status-fail">❌ Erreur</span>`;
+            row.cells[2].innerHTML = "-";
+            values.push(0);
+        }
+    }
+    drawChart(labels, values);
+}
+
+function drawChart(labels, values) {
+    const ctx = document.getElementById('pingChart').getContext('2d');
+    document.getElementById('pingChart').style.display = "block";
+
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Temps de réponse (ms)',
+                data: values,
+                backgroundColor: values.map(v => v > 0 ? 'green' : 'red')
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
 }
 </script>
 </body>
