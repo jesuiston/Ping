@@ -94,7 +94,8 @@ canvas {
 </div>
 
 <script>
-const API_BASE = "https://ping-api-518h.onrender.com";
+const API_BASE = "https://TON-API-RENDER.onrender.com"; // ✅ Mets ton URL Render ici
+let chart;
 
 async function pingIp() {
     const ip = document.getElementById('ip').value.trim();
@@ -107,10 +108,16 @@ async function pingIp() {
     try {
         const res = await fetch(`${API_BASE}/ping/${ip}`);
         const data = await res.json();
+
+        if (data.error) {
+            resultDiv.innerHTML = `❌ Erreur API : ${data.error}`;
+            return;
+        }
+
         if (data.alive) {
-            resultDiv.innerHTML = `✅ ${data.host} répond en ${data.time} ms<br>${data.output}`;
+            resultDiv.innerHTML = `✅ ${data.host || ip} répond en ${data.time} ms<br>${data.output}`;
         } else {
-            resultDiv.innerHTML = `❌ ${data.host} ne répond pas.`;
+            resultDiv.innerHTML = `❌ ${data.host || ip} ne répond pas.`;
         }
     } catch (error) {
         resultDiv.innerHTML = `❌ Erreur : ${error.message}`;
@@ -123,18 +130,27 @@ async function pingPopular() {
     const tbody = document.getElementById('pingResults');
     tbody.innerHTML = "";
     table.style.display = "table";
-    
+
     const labels = [];
     const values = [];
-    
+
     for (const ip of ips) {
         const row = document.createElement("tr");
         row.innerHTML = `<td>${ip}</td><td>⏳</td><td>-</td>`;
         tbody.appendChild(row);
-        
+
         try {
             const res = await fetch(`${API_BASE}/ping/${ip}`);
             const data = await res.json();
+
+            if (data.error) {
+                row.cells[1].innerHTML = `<span class="status-fail">❌ API Error</span>`;
+                row.cells[2].innerHTML = "-";
+                labels.push(ip);
+                values.push(0);
+                continue;
+            }
+
             labels.push(ip);
             if (data.alive) {
                 row.cells[1].innerHTML = `<span class="status-ok">✅ OK</span>`;
@@ -148,9 +164,40 @@ async function pingPopular() {
         } catch (err) {
             row.cells[1].innerHTML = `<span class="status-fail">❌ Erreur</span>`;
             row.cells[2].innerHTML = "-";
+            labels.push(ip);
             values.push(0);
         }
     }
     drawChart(labels, values);
 }
+
+function drawChart(labels, values) {
+    const ctx = document.getElementById('pingChart').getContext('2d');
+    document.getElementById('pingChart').style.display = "block";
+
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Temps de réponse (ms)',
+                data: values,
+                backgroundColor: values.map(v => v > 0 ? 'green' : 'red')
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
 </script>
+</body>
+</html>
